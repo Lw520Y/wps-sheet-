@@ -1,4 +1,4 @@
-# wps-sheets 批量修改 Sheet 名称
+# wps-sheets 批量修改 Sheet 名称-Clash
 
 一个小工具：按照 Excel 里的映射表（原名称 → 新名称），批量重命名工作簿中的所有 sheet。配合 WPS 的 `SHEETSNAME` 函数，可以先把全部 sheet 名提取出来，在表格里填好新名称后一键批量改名。
 

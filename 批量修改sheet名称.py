@@ -8,8 +8,9 @@
   - 工具按 A 列名称找到对应的 sheet，改名为 B 列名称
 
 用法：
-  python 批量修改sheet名称.py "文件.xlsx"
-  或直接双击运行 / 不带参数运行后按提示输入文件路径
+  双击运行：会弹出文件选择窗口，选中 Excel 文件即可
+  或拖拽：把 Excel 文件拖到 exe/脚本图标上
+  或命令行：python 批量修改sheet名称.py "文件.xlsx"
 
 保存前会自动在同目录生成一个带时间戳的备份文件。
 """
@@ -17,6 +18,33 @@ import os
 import sys
 import shutil
 import datetime
+
+
+def pause(msg='按回车退出...'):
+    """等待用户回车；非交互环境（双击/管道）下直接跳过不报错"""
+    try:
+        input(msg)
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
+def pick_file_dialog():
+    """弹出文件选择窗口（不依赖拖拽），返回所选路径；取消/失败返回 None"""
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)  # 置顶，避免弹窗落到其他窗口后面
+        path = filedialog.askopenfilename(
+            title='请选择要批量修改 sheet 名称的 Excel 文件',
+            filetypes=[('Excel 文件', '*.xlsx *.xlsm'), ('所有文件', '*.*')],
+        )
+        root.destroy()
+        return path or None
+    except Exception:
+        return None
+
 
 try:
     import openpyxl
@@ -31,14 +59,6 @@ START_ROW = 2              # 映射数据起始行
 # =============================================
 
 INVALID_CHARS = set(':\\/?*[]')
-
-
-def pause(msg='按回车退出...'):
-    """等待用户回车；非交互环境（双击/管道）下直接跳过不报错"""
-    try:
-        input(msg)
-    except (EOFError, KeyboardInterrupt):
-        pass
 
 
 def cell_to_name(v):
@@ -166,7 +186,16 @@ def main():
     if len(sys.argv) > 1:
         path = sys.argv[1]
     else:
-        path = input('请输入 Excel 文件路径（可直接把文件拖进来）：').strip().strip('"')
+        # 双击运行：先弹文件选择窗口，取消或弹不出来再退回手动输入
+        print('双击运行模式下，请在弹出的窗口中选择 Excel 文件...')
+        path = pick_file_dialog()
+        if not path:
+            try:
+                path = input('未选择文件。请输入 Excel 文件路径（可把文件拖进本窗口）：').strip().strip('"')
+            except EOFError:
+                print('未选择任何文件，程序退出。')
+                pause()
+                sys.exit(0)
 
     path = os.path.abspath(path)
     if not os.path.isfile(path):
